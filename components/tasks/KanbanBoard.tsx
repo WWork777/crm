@@ -48,6 +48,7 @@ interface KanbanBoardProps {
   initialColumns: Column[];
   userRole: string;
   teamMembers: any[];
+  activeBoardId: string;
 }
 
 // --- СТИЛИ ПРИОРИТЕТОВ ---
@@ -79,6 +80,7 @@ export default function KanbanBoard({
   initialTasks,
   initialColumns,
   userRole,
+  activeBoardId,
   teamMembers,
 }: KanbanBoardProps) {
   const [isMounted, setIsMounted] = useState(false);
@@ -240,7 +242,11 @@ export default function KanbanBoard({
             </span>
             <span className="text-xs font-bold text-white">{tasks.length}</span>
           </div>
-          <AddTaskModal columns={columns} members={teamMembers} />
+          <AddTaskModal
+            columns={columns}
+            members={teamMembers}
+            boardId={activeBoardId}
+          />
         </div>
       </div>
 
@@ -289,7 +295,7 @@ export default function KanbanBoard({
                   {...provided.droppableProps}
                   ref={provided.innerRef}
                   // Обычные аккуратные отступы px-4
-                  className="flex gap-5 items-start min-w-max pr-10 px-4"
+                  className="flex gap-5 items-start min-w-max pr-10 px-4 h-full"
                 >
                   {columns.map((column, index) => {
                     const columnTasks = filteredTasks.filter(
@@ -306,7 +312,7 @@ export default function KanbanBoard({
                           <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
-                            className={`flex flex-col gap-3 min-w-[300px] w-[300px] shrink-0 transition-opacity ${
+                            className={`flex flex-col gap-3 min-w-[300px] w-[300px] shrink-0 max-h-full transition-opacity ${
                               snapshot.isDragging ? "opacity-50" : ""
                             }`}
                           >
@@ -332,7 +338,7 @@ export default function KanbanBoard({
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.droppableProps}
-                                  className={`min-h-[60vh] rounded-[2rem] transition-all duration-300 p-1 ${
+                                  className={`flex-1 overflow-y-auto custom-scrollbar rounded-[2rem] transition-all duration-300 p-1 min-h-[150px] ${
                                     snapshot.isDraggingOver
                                       ? "bg-indigo-500/5 ring-1 ring-indigo-500/20"
                                       : ""
@@ -442,7 +448,8 @@ export default function KanbanBoard({
 
                   {/* Кнопка добавления колонки */}
                   <div className="shrink-0 pt-1">
-                    <AddColumnButton />
+                    <AddColumnButton boardId={activeBoardId} />{" "}
+                    {/* ПЕРЕДАЕМ ID ДОСКИ */}
                   </div>
                 </div>
               )}

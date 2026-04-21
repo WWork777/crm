@@ -80,6 +80,11 @@ export default function Sidebar() {
       href: "/tasks",
     },
     {
+      name: "CRM",
+      icon: Target,
+      href: "/crm",
+    },
+    {
       name: "Финансы",
       icon: CircleDollarSign,
       href: "/dashboard",
@@ -94,11 +99,7 @@ export default function Sidebar() {
       icon: Users,
       href: "/settings/team",
     },
-    {
-      name: "CRM",
-      icon: Target,
-      href: "/crm",
-    },
+
     {
       name: "Настройки",
       icon: Sliders,

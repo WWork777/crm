@@ -56,12 +56,14 @@ export async function getTasks() {
 
 export async function addTask(formData: FormData) {
   const { teamId } = await getTeamAccess();
+  const boardId = formData.get("boardId") as string; // Получаем из скрытого поля формы
 
-  // Валидация через Zod
+  if (!boardId) throw new Error("Не указана доска для задачи");
+
   const validated = TaskSchema.safeParse({
     title: formData.get("title"),
     description: formData.get("description"),
-    status: formData.get("columnId"),
+    status: formData.get("columnId"), // ID колонки
     priority: formData.get("priority"),
     dueDate: formData.get("dueDate"),
     assigneeId: formData.get("assigneeId"),
@@ -78,8 +80,9 @@ export async function addTask(formData: FormData) {
     data: {
       title,
       description: description || "",
-      status,
+      status, // Это ID колонки
       teamId,
+      boardId, // ОБЯЗАТЕЛЬНОЕ ПОЛЕ ТЕПЕРЬ
       priority,
       dueDate: dueDate ? new Date(dueDate) : null,
       assigneeId: assigneeId || null,
@@ -155,47 +158,57 @@ export async function deleteTask(taskId: string) {
  * Колонки доски
  */
 
-export async function getColumns() {
+export async function getColumns(boardId: string) {
+  // ИСПРАВЛЕНО: заменено getAuth на getTeamAccess
   const { teamId } = await getTeamAccess();
-  let columns = await prisma.boardColumn.findMany({
-    where: { teamId },
+
+  const columns = await prisma.boardColumn.findMany({
+    where: {
+      boardId: boardId,
+      teamId: teamId,
+    },
     orderBy: { order: "asc" },
   });
 
   if (columns.length === 0) {
-    // Системная инициализация колонок
     await prisma.boardColumn.createMany({
       data: [
-        { title: "К выполнению", order: 0, teamId },
-        { title: "В работе", order: 1, teamId },
-        { title: "Готово", order: 2, teamId },
+        { title: "К выполнению", order: 0, teamId, boardId },
+        { title: "В работе", order: 1, teamId, boardId },
+        { title: "Готово", order: 2, teamId, boardId },
       ],
     });
+
     return await prisma.boardColumn.findMany({
-      where: { teamId },
+      where: { boardId, teamId },
       orderBy: { order: "asc" },
     });
   }
+
   return columns;
 }
 
 export async function addColumn(formData: FormData) {
   const { teamId } = await getTeamAccess();
   const titleValue = formData.get("title");
+  const boardId = formData.get("boardId") as string; // ДОБАВЛЕНО: получаем boardId из формы
 
-  // Проверяем, что title это строка и она не пустая
+  if (!boardId) throw new Error("ID доски отсутствует");
   if (typeof titleValue !== "string" || !titleValue.trim()) {
     throw new Error("Название колонки обязательно");
   }
 
   const title = titleValue.trim();
-  const count = await prisma.boardColumn.count({ where: { teamId } });
+  const count = await prisma.boardColumn.count({
+    where: { teamId, boardId }, // ИСПРАВЛЕНО: считаем колонки конкретной доски
+  });
 
   await prisma.boardColumn.create({
     data: {
       title,
       order: count,
       teamId,
+      boardId, // ДОБАВЛЕНО: обязательно для новой схемы
     },
   });
 
@@ -228,4 +241,39 @@ export async function updateColumnsOrder(columnIds: string[]) {
   );
 
   revalidatePath("/tasks");
+}
+export async function createBoard(name: string) {
+  const { teamId } = await getTeamAccess();
+
+  const board = await prisma.board.create({
+    data: { name, teamId },
+  });
+
+  // Авто-создание колонок для новой доски
+  await prisma.boardColumn.createMany({
+    data: [
+      { title: "Нужно сделать", order: 0, boardId: board.id, teamId },
+      { title: "В работе", order: 1, boardId: board.id, teamId },
+      { title: "Готово", order: 2, boardId: board.id, teamId },
+    ],
+  });
+
+  revalidatePath("/tasks");
+  return board;
+}
+
+export async function getBoards() {
+  const { teamId } = await getTeamAccess();
+  let boards = await prisma.board.findMany({
+    where: { teamId },
+    orderBy: { createdAt: "asc" },
+  });
+
+  // Если досок вообще нет, создаем "Общее"
+  if (boards.length === 0) {
+    const defaultBoard = await createBoard("Общее");
+    return [defaultBoard];
+  }
+
+  return boards;
 }

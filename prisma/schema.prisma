@@ -23,16 +23,18 @@ model User {
 }
 
 model Team {
-  id           String           @id @default(cuid())
-  name         String
-  createdAt    DateTime         @default(now())
-  invitations  TeamInvitation[]
-  members      TeamMember[]
-  transactions Transaction[]
-  tasks        Task[]
-  boardColumns BoardColumn[]
-  // ДОБАВЛЕНО: обратная связь для контрагентов
+  id             String           @id @default(cuid())
+  name           String
+  createdAt      DateTime         @default(now())
+  invitations    TeamInvitation[]
+  members        TeamMember[]
+  transactions   Transaction[]
+  tasks          Task[]
+  boardColumns   BoardColumn[]
   counterparties Counterparty[] 
+  
+  // ОБЯЗАТЕЛЬНО ДОБАВИТЬ ЭТУ СТРОКУ:
+  boards         Board[]
 }
 
 model TeamMember {
@@ -60,17 +62,22 @@ model Transaction {
 }
 
 model Task {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
   description String?
-  status      String    @default("TODO")
-  priority    Priority  @default(MEDIUM)
-  createdAt   DateTime  @default(now())
+  status      String   @default("TODO") // Здесь будет храниться ID колонки
+  priority    Priority @default(MEDIUM)
+  createdAt   DateTime @default(now())
   dueDate     DateTime?
+  
+  boardId     String   
+  board       Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  
   teamId      String
-  team        Team      @relation(fields: [teamId], references: [id])
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  
   assigneeId  String?
-  assignee    User?     @relation(fields: [assigneeId], references: [id])
+  assignee    User?    @relation(fields: [assigneeId], references: [id])
 }
 
 model TeamInvitation {
@@ -89,6 +96,10 @@ model BoardColumn {
   id      String @id @default(cuid())
   title   String
   order   Int    @default(0)
+  
+  boardId String 
+  board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  
   teamId  String
   team    Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
 }
@@ -137,4 +148,15 @@ model LeadStatus {
   teamId  String
   color   String? @default("indigo")
   leads   Lead[]
+}
+model Board {
+  id        String   @id @default(cuid())
+  name      String   
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  
+  columns   BoardColumn[]
+  tasks     Task[]
+  
+  createdAt DateTime @default(now())
 }

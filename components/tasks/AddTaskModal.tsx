@@ -20,9 +20,11 @@ import CustomSelect from "../CustomSelect";
 export default function AddTaskModal({
   columns,
   members,
+  boardId,
 }: {
   columns: any[];
   members: any[];
+  boardId: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -146,7 +148,7 @@ export default function AddTaskModal({
                       name="assigneeId"
                       value={selectedAssignee}
                     />
-
+                    <input type="hidden" name="boardId" value={boardId} />
                     <div className="space-y-1.5">
                       <input
                         type="text"
