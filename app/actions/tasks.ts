@@ -23,7 +23,7 @@ const TaskSchema = z.object({
  * Вспомогательная функция для проверки доступа.
  * Теперь она возвращает всё необходимое для любого экшена.
  */
-async function getTeamAccess() {
+export async function getTeamAccess() {
   const session = await getServerSession(authOptions);
   const teamId = (session?.user as any)?.activeTeamId;
   const role = (session?.user as any)?.role;
@@ -211,6 +211,21 @@ export async function deleteColumn(columnId: string) {
     prisma.task.deleteMany({ where: { status: columnId, teamId } }),
     prisma.boardColumn.deleteMany({ where: { id: columnId, teamId } }),
   ]);
+
+  revalidatePath("/tasks");
+}
+export async function updateColumnsOrder(columnIds: string[]) {
+  const { teamId } = await getTeamAccess();
+
+  // Обновляем индексы всех колонок в одной транзакции
+  await prisma.$transaction(
+    columnIds.map((id, index) =>
+      prisma.boardColumn.updateMany({
+        where: { id, teamId },
+        data: { order: index },
+      }),
+    ),
+  );
 
   revalidatePath("/tasks");
 }

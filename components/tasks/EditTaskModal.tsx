@@ -1,19 +1,22 @@
 "use client";
 
-import { updateTaskDetails } from "@/app/actions/tasks";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+// Добавили deleteTask в импорт
+import { updateTaskDetails, deleteTask } from "@/app/actions/tasks";
 import toast from "react-hot-toast";
 import {
   X,
   Save,
-  Layout,
+  LayoutGrid,
   User,
   Calendar,
   AlignLeft,
   Sparkles,
   CircleDot,
+  Info,
+  Trash2,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import CustomSelect from "../CustomSelect";
 
 export default function EditTaskModal({
@@ -21,16 +24,21 @@ export default function EditTaskModal({
   columns,
   members,
   onClose,
+  userRole,
 }: {
   task: any;
   columns: any[];
+  userRole: string;
   members: any[];
   onClose: () => void;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Состояния для кастомных селектов (инициализируем данными из задачи)
+  // ОПРЕДЕЛЯЕМ isOwner (теперь проверка внизу заработает)
+  const isOwner = userRole === "OWNER";
+
   const [selectedColumn, setSelectedColumn] = useState(task.status);
   const [selectedPriority, setSelectedPriority] = useState(
     task.priority || "MEDIUM",
@@ -47,46 +55,52 @@ export default function EditTaskModal({
     };
   }, []);
 
-  // Опции для селектов
   const columnOptions = columns.map((col) => ({
     value: col.id,
-    label: col.title.toUpperCase(),
+    label: col.title,
   }));
 
   const priorityOptions = [
-    { value: "HIGH", label: "🔴 ВЫСОКИЙ" },
-    { value: "MEDIUM", label: "🟡 СРЕДНИЙ" },
-    { value: "LOW", label: "🟢 НИЗКИЙ" },
+    { value: "HIGH", label: "Высокий" },
+    { value: "MEDIUM", label: "Средний" },
+    { value: "LOW", label: "Низкий" },
   ];
 
   const memberOptions = [
-    { value: "", label: "НЕ НАЗНАЧЕН" },
-    ...members.map((m) => ({
+    { value: "", label: "Не назначен" },
+    ...members.map((m: any) => ({
       value: m.userId,
-      label: (m.user.name || m.user.email).toUpperCase(),
+      label: m.user.name || m.user.email,
     })),
   ];
 
+  const handleDelete = async () => {
+    if (!window.confirm("Удалить эту задачу навсегда?")) return;
+
+    setIsDeleting(true);
+    const t = toast.loading("Ликвидация задачи...");
+
+    try {
+      await deleteTask(task.id);
+      toast.success("Задача удалена", { id: t });
+      onClose();
+    } catch (e: any) {
+      toast.error(e.message || "Ошибка удаления", { id: t });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   async function handleSubmit(formData: FormData) {
     setIsSubmitting(true);
-
-    // Вшиваем значения из стейтов CustomSelect в FormData
     formData.set("columnId", selectedColumn);
     formData.set("priority", selectedPriority);
     formData.set("assigneeId", selectedAssignee);
 
-    const t = toast.loading("Синхронизация данных...", {
-      style: {
-        background: "#0f172a",
-        color: "#fff",
-        border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: "1rem",
-      },
-    });
-
+    const t = toast.loading("Сохранение изменений...");
     try {
       await updateTaskDetails(task.id, formData);
-      toast.success("Изменения зафиксированы", { id: t });
+      toast.success("Данные обновлены", { id: t });
       onClose();
     } catch (e: any) {
       toast.error(e.message || "Ошибка записи", { id: t });
@@ -99,150 +113,158 @@ export default function EditTaskModal({
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-md animate-in fade-in duration-300"
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300"
         onClick={onClose}
       />
 
-      {/* Модальное окно */}
-      <div className="relative bg-[#0f172a] border border-white/10 rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300 z-10">
-        {/* Шапка */}
-        <div className="flex items-center justify-between p-8 border-b border-white/5 bg-white/[0.02] shrink-0">
-          <div className="space-y-1">
-            <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-              <Sparkles size={20} className="text-indigo-400" />
-              Конфигурация
-            </h2>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-              ID Системы: {task.id.slice(-8)}
-            </p>
+      <div className="relative bg-[#0f172a] border border-white/10 rounded-3xl shadow-2xl w-full max-w-md flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-300 z-10">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-white/[0.01] shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+              <Sparkles size={18} className="text-indigo-400" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white leading-tight">
+                Редактирование
+              </h2>
+              <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                ID: {task.id.slice(-8)}
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-500 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all"
+            className="text-slate-500 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Тело формы со стилизованным скроллбаром */}
-        <form
-          action={handleSubmit}
-          className="p-8 flex flex-col gap-8 overflow-y-auto 
-            [&::-webkit-scrollbar]:w-1.5
-            [&::-webkit-scrollbar-track]:bg-transparent
-            [&::-webkit-scrollbar-thumb]:bg-white/10
-            [&::-webkit-scrollbar-thumb]:rounded-full
-            hover:[&::-webkit-scrollbar-thumb]:bg-indigo-500/40"
-        >
-          {/* Название */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] ml-1">
-              Название задачи
-            </label>
-            <input
-              type="text"
-              name="title"
-              defaultValue={task.title}
-              required
-              className="w-full px-5 py-4 bg-[#0f172a]/40 border border-white/5 rounded-2xl focus:border-indigo-500/50 transition-all font-bold text-white outline-none uppercase tracking-widest"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Статус */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                {/* <Layout size={12} className="text-indigo-500" />  */}
-                Секция
-              </label>
-              <CustomSelect
-                value={selectedColumn}
-                onChange={setSelectedColumn}
-                options={columnOptions}
-                icon={<Layout size={14} className="text-indigo-400" />}
-              />
-            </div>
-
-            {/* Приоритет */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                {/* <CircleDot size={12} className="text-rose-500" />  */}
-                Приоритет
-              </label>
-              <CustomSelect
-                value={selectedPriority}
-                onChange={setSelectedPriority}
-                options={priorityOptions}
-                icon={<CircleDot size={14} className="text-rose-400" />}
-              />
-            </div>
-
-            {/* Исполнитель */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                {/* <User size={12} className="text-indigo-500" />  */}
-                Ответственный
-              </label>
-              <CustomSelect
-                value={selectedAssignee}
-                onChange={setSelectedAssignee}
-                options={memberOptions}
-                placeholder="ВЫБЕРИТЕ"
-                icon={<User size={14} className="text-indigo-400" />}
-              />
-            </div>
-
-            {/* Дедлайн */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                {/* <Calendar size={12} className="text-indigo-500" />  */}
-                Крайний срок
-              </label>
+        <div className="p-6 overflow-y-auto custom-scrollbar">
+          <form action={handleSubmit} className="space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-[11px] font-bold text-indigo-400 uppercase tracking-wider">
+                <Info size={14} /> Суть задачи
+              </div>
               <input
-                type="date"
-                name="dueDate"
-                defaultValue={
-                  task.dueDate
-                    ? new Date(task.dueDate).toISOString().split("T")[0]
-                    : ""
-                }
-                className="w-full px-5 py-3 bg-[#0f172a]/50 border border-white/5 rounded-2xl focus:border-indigo-500/50 font-black text-[10px] text-slate-200 transition-all outline-none [color-scheme:dark] uppercase tracking-widest h-[48px]"
+                type="text"
+                name="title"
+                required
+                defaultValue={task.title}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none font-medium"
               />
             </div>
-          </div>
 
-          {/* Описание */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-              {/* <AlignLeft size={12} className="text-indigo-500" /> */}
-              Описание
-            </label>
-            <textarea
-              name="description"
-              defaultValue={task.description}
-              rows={4}
-              placeholder="Добавьте контекст..."
-              className="w-full px-5 py-4 bg-[#0f172a]/40 border border-white/5 rounded-2xl focus:border-indigo-500/50 text-sm font-medium text-slate-400 resize-none transition-all outline-none uppercase tracking-tight"
-            />
-          </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-[11px] font-bold text-indigo-400 uppercase tracking-wider">
+                <User size={14} /> Распределение
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-semibold text-slate-500 ml-1">
+                    Исполнитель
+                  </label>
+                  <CustomSelect
+                    value={selectedAssignee}
+                    onChange={setSelectedAssignee}
+                    options={memberOptions}
+                    placeholder="Выбрать..."
+                    icon={<User size={14} className="text-indigo-400" />}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-semibold text-slate-500 ml-1">
+                    Приоритет
+                  </label>
+                  <CustomSelect
+                    value={selectedPriority}
+                    onChange={setSelectedPriority}
+                    options={priorityOptions}
+                    icon={<CircleDot size={14} className="text-rose-400" />}
+                  />
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <label className="text-[10px] font-semibold text-slate-500 ml-1">
+                    Секция доски
+                  </label>
+                  <CustomSelect
+                    value={selectedColumn}
+                    onChange={setSelectedColumn}
+                    options={columnOptions}
+                    icon={<LayoutGrid size={14} className="text-indigo-400" />}
+                  />
+                </div>
+              </div>
+            </div>
 
-          {/* Футер */}
-          <div className="flex justify-end pt-6 border-t border-white/5 shrink-0">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50 flex items-center gap-3 group active:scale-95"
-            >
-              <Save
-                size={16}
-                className="group-hover:scale-110 transition-transform"
-              />
-              {isSubmitting ? "СИНХРОНИЗАЦИЯ..." : "ОБНОВИТЬ ДАННЫЕ"}
-            </button>
-          </div>
-        </form>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-[11px] font-bold text-indigo-400 uppercase tracking-wider">
+                <AlignLeft size={14} /> Дедлайн
+              </div>
+              <div className="space-y-3">
+                <div className="relative group">
+                  <Calendar
+                    size={14}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
+                  />
+                  <input
+                    type="date"
+                    name="dueDate"
+                    defaultValue={
+                      task.dueDate
+                        ? new Date(task.dueDate).toISOString().split("T")[0]
+                        : ""
+                    }
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:border-indigo-500/50 outline-none [color-scheme:dark]"
+                  />
+                </div>
+                <textarea
+                  name="description"
+                  defaultValue={task.description}
+                  placeholder="Опишите детали..."
+                  rows={3}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-300 focus:border-indigo-500/50 outline-none resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-white/5 items-center">
+              <div className="flex-1">
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={isDeleting || isSubmitting}
+                    className="flex items-center gap-2 text-rose-500 hover:text-rose-400 text-xs font-bold transition-colors disabled:opacity-30 group"
+                  >
+                    <Trash2
+                      size={14}
+                      className="group-hover:rotate-12 transition-transform"
+                    />
+                    Удалить
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-white transition-colors"
+              >
+                Отмена
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting || isDeleting}
+                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                <Save size={14} />
+                {isSubmitting ? "Сохранение..." : "Обновить задачу"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>,
     document.body,

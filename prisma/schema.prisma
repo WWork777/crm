@@ -113,3 +113,28 @@ model Contract {
   date           DateTime?
   counterparty   Counterparty @relation(fields: [counterpartyId], references: [id], onDelete: Cascade)
 }
+
+model Lead {
+  id          String   @id @default(uuid())
+  title       String   // Название сделки
+  contactName String?  // Имя клиента
+  phone       String?
+  email       String?
+  value       Float    @default(0) // Сумма сделки
+  statusId    String   // ID колонки (стадии)
+  priority    String   @default("MEDIUM")
+  teamId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  paymentType String   @default("FIXED")
+  status      LeadStatus @relation(fields: [statusId], references: [id])
+}
+
+model LeadStatus {
+  id      String @id @default(uuid())
+  title   String
+  order   Int
+  teamId  String
+  color   String? @default("indigo")
+  leads   Lead[]
+}

@@ -20,6 +20,7 @@ import {
   Layers,
   CircleDollarSign,
   Handshake,
+  Target,
   Sliders,
   Users,
   LayoutGrid,
@@ -92,6 +93,11 @@ export default function Sidebar() {
       name: "Команда",
       icon: Users,
       href: "/settings/team",
+    },
+    {
+      name: "CRM",
+      icon: Target,
+      href: "/crm",
     },
     {
       name: "Настройки",

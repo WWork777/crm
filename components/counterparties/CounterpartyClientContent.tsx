@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Briefcase, FileText, Settings2 } from "lucide-react";
+import { Briefcase, FileText, Settings2, Plus, Info } from "lucide-react";
 import AddCounterpartyModal from "./AddCounterpartyModal";
 import EditCounterpartyModal from "./EditCounterpartyModal";
 import AddContractModal from "./AddContractModal";
@@ -16,23 +16,22 @@ export default function CounterpartyClientContent({
     id: string;
     name: string;
   } | null>(null);
+
   return (
     <div className="min-h-screen bg-[#030712] text-slate-400 p-4 sm:p-10 font-sans">
-      <div className="max-w-8xl mx-auto space-y-10">
-        <header className="flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-5">
-            <div className="bg-indigo-500/10 border border-indigo-500/20 p-3.5 rounded-2xl text-indigo-400">
-              <Briefcase size={28} />
+      <div className="max-w-8xl mx-auto space-y-6">
+        {/* Компактный хедер */}
+        <header className="flex justify-between items-center bg-[#0f172a]/40 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+          <div className="flex items-center gap-4">
+            <div className="bg-indigo-500/10 border border-indigo-500/20 p-2.5 rounded-xl text-indigo-400">
+              <Briefcase size={20} />
             </div>
             <div>
-              <h1 className="text-3xl font-black text-white tracking-tight leading-none">
-                Реестр{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
-                  контрагентов
-                </span>
+              <h1 className="text-xl font-bold text-white tracking-tight">
+                Реестр контрагентов
               </h1>
-              <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] mt-2">
-                Управление базой партнеров
+              <p className="text-[10px] text-slate-500 font-medium uppercase tracking-widest">
+                База партнеров: {counterparties.length}
               </p>
             </div>
           </div>
@@ -40,65 +39,84 @@ export default function CounterpartyClientContent({
         </header>
 
         {counterparties.length === 0 ? (
-          <div className="h-64 border-2 border-dashed border-white/5 rounded-[3rem] flex flex-col items-center justify-center text-slate-600 bg-[#0f172a]/10">
-            <Briefcase size={40} className="mb-4 opacity-10" />
-            <p className="text-[10px] font-black uppercase tracking-widest text-center">
-              База контрагентов пуста
+          <div className="h-48 border border-dashed border-white/5 rounded-3xl flex flex-col items-center justify-center text-slate-600 bg-[#0f172a]/10">
+            <Briefcase size={32} className="mb-3 opacity-10" />
+            <p className="text-[10px] font-bold uppercase tracking-widest">
+              Список пуст
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-2">
+            {/* Заголовки "таблицы" (скрыты на мобилках) */}
+            <div className="hidden lg:grid grid-cols-12 px-8 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600">
+              <div className="col-span-3">Контрагент</div>
+              <div className="col-span-6">Дополнительные реквизиты</div>
+              <div className="col-span-2 text-center">Документы</div>
+              <div className="col-span-1 text-right">Опции</div>
+            </div>
+
+            {/* Список строк */}
             {counterparties.map((cp) => {
               const fields = JSON.parse(cp.fields || "{}");
 
               return (
                 <div
                   key={cp.id}
-                  className="bg-[#0f172a]/30 border border-white/5 p-8 rounded-[2.5rem] backdrop-blur-md hover:border-indigo-500/30 transition-all group relative overflow-hidden shadow-2xl"
+                  className="group grid grid-cols-1 lg:grid-cols-12 items-center gap-4 bg-[#0f172a]/30 border border-white/5 p-3 lg:px-8 lg:py-3 rounded-2xl hover:bg-white/[0.03] hover:border-indigo-500/30 transition-all"
                 >
-                  <div className="flex justify-between items-start mb-8 relative z-10">
-                    <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20 group-hover:scale-105 transition-transform">
-                      <Briefcase size={24} />
+                  {/* Имя и иконка */}
+                  <div className="col-span-3 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-500 group-hover:text-indigo-400 transition-colors">
+                      <Briefcase size={16} />
                     </div>
+                    <span className="text-sm font-bold text-slate-200 truncate">
+                      {cp.name}
+                    </span>
+                  </div>
+
+                  {/* Динамические поля (выстроены в ряд) */}
+                  <div className="col-span-6 flex flex-wrap gap-x-6 gap-y-1">
+                    {Object.entries(fields)
+                      .slice(0, 3)
+                      .map(([key, value]) => (
+                        <div key={key} className="flex items-center gap-2">
+                          <span className="text-[9px] font-bold text-slate-600 uppercase tracking-tight">
+                            {key}:
+                          </span>
+                          <span className="text-[11px] text-slate-400 truncate max-w-[120px]">
+                            {(value as string) || "—"}
+                          </span>
+                        </div>
+                      ))}
+                    {Object.keys(fields).length > 3 && (
+                      <span className="text-[9px] text-indigo-500 font-bold">
+                        + еще {Object.keys(fields).length - 3}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Кнопка договоров */}
+                  <div className="col-span-2 flex justify-center">
                     <button
-                      onClick={() => setEditingCp(cp)} // Правильное место для вызова модалки
-                      className="p-2 text-slate-700 hover:text-white bg-white/5 rounded-xl transition-all"
+                      onClick={() =>
+                        setContractTarget({ id: cp.id, name: cp.name })
+                      }
+                      className="flex items-center gap-2 px-4 py-1.5 rounded-xl bg-white/5 hover:bg-indigo-500/10 border border-white/5 hover:border-indigo-500/20 text-[10px] font-bold text-slate-400 hover:text-indigo-400 transition-all"
                     >
-                      <Settings2 size={18} />
+                      <FileText size={12} />
+                      Договоры: {cp.contracts?.length || 0}
                     </button>
                   </div>
 
-                  <h3 className="text-2xl font-black text-white mb-6 tracking-tight leading-none truncate">
-                    {cp.name}
-                  </h3>
-
-                  <div className="space-y-4 mb-8">
-                    {Object.entries(fields).map(([key, value]) => (
-                      <div
-                        key={key}
-                        className="flex flex-col border-b border-white/5 pb-2"
-                      >
-                        <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em] mb-1">
-                          {key}
-                        </span>
-                        <span className="text-xs font-bold text-slate-300 truncate">
-                          {(value as string) || "—"}
-                        </span>
-                      </div>
-                    ))}
+                  {/* Кнопка настроек */}
+                  <div className="col-span-1 flex justify-end">
+                    <button
+                      onClick={() => setEditingCp(cp)}
+                      className="p-2 text-slate-600 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                    >
+                      <Settings2 size={16} />
+                    </button>
                   </div>
-
-                  <button
-                    onClick={() =>
-                      setContractTarget({ id: cp.id, name: cp.name })
-                    }
-                    className="w-full py-4 bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 rounded-2xl border border-white/5 flex items-center justify-center gap-3 transition-all relative z-10"
-                  >
-                    <FileText size={16} /> Договоры ({cp.contracts?.length || 0}
-                    )
-                  </button>
-
-                  <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-indigo-600/5 rounded-full blur-3xl" />
                 </div>
               );
             })}
@@ -106,7 +124,7 @@ export default function CounterpartyClientContent({
         )}
       </div>
 
-      {/* Модалка редактирования рендерится один раз вне цикла */}
+      {/* Модалки */}
       {editingCp && (
         <EditCounterpartyModal
           counterparty={editingCp}
