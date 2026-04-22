@@ -43,29 +43,29 @@ export default function EditTransactionModal({
 
   // Опции для Типа
   const typeOptions = [
-    { value: "income", label: "📈 ДОХОД" },
-    { value: "expense", label: "📉 РАСХОД" },
-    { value: "debt", label: "🤝 ДОЛГ" },
+    { value: "income", label: "ДОХОД" },
+    { value: "expense", label: "РАСХОД" },
+    { value: "debt", label: "ДОЛГ" },
   ];
 
   // Опции для Статуса
   const statusOptions = [
-    { value: "paid", label: "✅ ОПЛАЧЕНО" },
-    { value: "pending", label: "⏳ ОЖИДАЕТСЯ" },
+    { value: "paid", label: "ОПЛАЧЕНО" },
+    { value: "pending", label: "ОЖИДАЕТСЯ" },
   ];
 
   // Опции для Категорий
   const categoryOptions = [
     { value: "", label: "БЕЗ КАТЕГОРИИ" },
-    { value: "Выручка", label: "💰 ВЫРУЧКА" },
-    { value: "Прочее (доход)", label: "➕ ПРОЧЕЕ (ДОХОД)" },
-    { value: "Налоги", label: "🏛️ НАЛОГИ" },
-    { value: "Зарплата", label: "👩‍💻 ЗАРПЛАТА" },
-    { value: "Аренда", label: "🏠 АРЕНДА" },
-    { value: "Маркетинг", label: "📣 МАРКЕТИНГ" },
-    { value: "Сервисы/Софт", label: "☁️ СЕРВИСЫ" },
-    { value: "Закупки", label: "📦 ЗАКУПКИ" },
-    { value: "Прочее", label: "⚙️ ПРОЧЕЕ" },
+    { value: "Выручка", label: "ВЫРУЧКА" },
+    { value: "Прочее (доход)", label: "ПРОЧЕЕ (ДОХОД)" },
+    { value: "Налоги", label: "НАЛОГИ" },
+    { value: "Зарплата", label: "ЗАРПЛАТА" },
+    { value: "Аренда", label: "АРЕНДА" },
+    { value: "Маркетинг", label: "МАРКЕТИНГ" },
+    { value: "Сервисы/Софт", label: "СЕРВИСЫ" },
+    { value: "Закупки", label: "ЗАКУПКИ" },
+    { value: "Прочее", label: "ПРОЧЕЕ" },
   ];
 
   async function handleSubmit(formData: FormData) {
@@ -154,7 +154,7 @@ export default function EditTransactionModal({
                         value={selectedType}
                         onChange={setSelectedType}
                         options={typeOptions}
-                        icon={<Wallet size={14} className="text-indigo-400" />}
+                        // icon={<Wallet size={14} className="text-indigo-400" />}
                       />
                     </div>
                     <div className="space-y-2">
@@ -166,12 +166,12 @@ export default function EditTransactionModal({
                         value={selectedStatus}
                         onChange={setSelectedStatus}
                         options={statusOptions}
-                        icon={
-                          <CheckCircle2
-                            size={14}
-                            className="text-emerald-400"
-                          />
-                        }
+                        // icon={
+                        //   <CheckCircle2
+                        //     size={14}
+                        //     className="text-emerald-400"
+                        //   />
+                        // }
                       />
                     </div>
                   </div>
@@ -183,7 +183,7 @@ export default function EditTransactionModal({
                         Сумма (₽)
                       </label>
                       <input
-                        type="number"
+                        type="text"
                         name="amount"
                         defaultValue={transaction.amount}
                         required
@@ -221,7 +221,7 @@ export default function EditTransactionModal({
                       onChange={setSelectedCategory}
                       options={categoryOptions}
                       placeholder="БЕЗ КАТЕГОРИИ"
-                      icon={<Tag size={14} className="text-indigo-400" />}
+                      // icon={<Tag size={14} className="text-indigo-400" />}
                     />
                   </div>
 

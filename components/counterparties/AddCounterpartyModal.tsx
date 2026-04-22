@@ -142,20 +142,14 @@ export default function AddCounterpartyModal() {
                     name="name"
                     required
                     autoFocus
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-bold placeholder:text-white-500"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all placeholder:text-white-500 mt-2"
                     placeholder="Введите наименование..."
                   />
                 </div>
 
                 {/* Динамические поля */}
                 <div className="space-y-6">
-                  <div className="flex justify-between items-center px-1">
-                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">
-                      Атрибуты данных
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-5">
+                  <div className="grid grid-cols-1 gap-5 mt-2">
                     {fields.map((field) => (
                       <div
                         key={field.id}
